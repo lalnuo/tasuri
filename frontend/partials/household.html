@@ -1,0 +1,12 @@
+<h2>{{name}}</h2>
+
+<div ng-repeat="userBalance in userBalances">
+{{userBalance.name}} {{userBalance.userBalance}}
+</div>
+
+  <form novalidate class="simple-form">
+    Username: <select ng-model="purchase.user" ng-options="user as user.name for user in users"> </select> <br/>
+    Purchase: <input type="text" ng-model="purchase.name" /><br/>
+    Price: <input type="number" ng-model="purchase.price" />
+    <input type="submit" value="submit" >
+  </form>
