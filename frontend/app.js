@@ -3,30 +3,43 @@ var tasuriApp = angular.module('tasuriApp', ['ui.router', 'ngCookies']).config([
 }]);
 var server = 'http://localhost:3000';
 
-tasuriApp.controller('HouseholdController', function($scope, $stateParams, $state, householdService, $http) {
-  if ($stateParams.name) {
-    var promise = householdService.getHousehold($stateParams.name)
+tasuriApp.controller('HouseholdController', function($scope, $stateParams, $state, householdService, $http, household) {
+  if (!$stateParams.name) {
+    $state.go('error')
+    return;
+  }
+  $scope.create = function() {
+    var promise = householdService.createHousehold($stateParams.name, $scope.password)
+    promise.then(function(data) {
 
-    promise.then(function(data) {
-      if (data.status === householdService.SHOW_HOUSEHOLD) {
-        $scope.name = data.data.name;
-        $scope.userBalances = data.data.balances;
-        $scope.users = data.data.users
-      } else if (data.status === householdService.AUTHENTICATION_REQUIRED) {
-        $state.go('authentication', {'name': $stateParams.name});
-      } else {
-
-      }
+      $state.go('household', {name: $stateParams.name})
     });
+  }
+
+  var currentState = $state.current.name
+  if (currentState === 'household') {
+      if (household.status === householdService.SHOW_HOUSEHOLD) {
+        $scope.name = household.data.name;
+        $scope.userBalances = household.data.balances;
+        $scope.users = household.data.users;
+      } else if (household.status === householdService.AUTHENTICATION_REQUIRED) {
+        $state.go('authentication', {'name': $stateParams.name});
+      } else if (household.status === householdService.NEW_HOUSEHOLD) {
+        $state.go('new_household', {'name': $stateParams.name});
+      } else {
+        $state.go('error');
+      }
+  } else if (currentState === 'new_household') {
+    $scope.name = $stateParams.name;
   }
 });
 
 tasuriApp.controller('AuthenticationController', function($scope, $stateParams, $state, authenticationService) {
   $scope.auth = function() {
-    var promise = authenticationService.auth($scope.householdName, $scope.householdPassword);
+    var promise = authenticationService.auth($stateParams.name, $scope.householdPassword);
     promise.then(function(data) {
       if (data) {
-        $state.go('households', {name: $stateParams.name})
+        $state.go('household', {name: $stateParams.name})
       }
     });
   }
@@ -45,7 +58,7 @@ tasuriApp.service('authenticationService', function($http, $q) {
 
 tasuriApp.service('householdService', function($http, $q) {
 
-  this.OK = 'ok',
+  this.NEW_HOUSEHOLD = 'ok',
   this.SHOW_HOUSEHOLD = 'showHousehold'
   this.AUTHENTICATION_REQUIRED = 'authentication',
 
@@ -60,11 +73,18 @@ tasuriApp.service('householdService', function($http, $q) {
       if (statusCode === 403) {
         deferred.resolve({status: self.AUTHENTICATION_REQUIRED})
       } else {
-        console.log("Not yet created")
+        deferred.resolve({status: self.NEW_HOUSEHOLD})
       }
     })
-    
 
+    return deferred.promise;
+  }
+
+  this.createHousehold = function(name, password) {
+    var deferred = $q.defer();
+    $http.post(server + '/households', {name: name, password: password}).success(function() {
+      deferred.resolve(true);
+    });
     return deferred.promise;
   }
 });
@@ -73,18 +93,30 @@ tasuriApp.service('householdService', function($http, $q) {
 tasuriApp.config(function($stateProvider, $urlRouterProvider) {
   //
   // For any unmatched url, redirect to /state1
-  $urlRouterProvider.otherwise("/");
+  $urlRouterProvider.otherwise("error");
   //
   // Now set up the states
   $stateProvider
-    .state('households', {
+    .state('household', {
       url: "/households/:name",
+      resolve: {household: function(householdService, $stateParams) {
+        return householdService.getHousehold($stateParams.name)
+      }},
       templateUrl: "partials/household.html",
       controller: 'HouseholdController',
     })
     .state('authentication', {
-      templateUrl: 'partials/authentication.html',
+      templateUrl: 'partials/auth.html',
       params: {name: null},
       controller: 'AuthenticationController'
+    })
+    .state('new_household', {
+      templateUrl: 'partials/new_household.html',
+      resolve: {household: function() {return {}}},
+      params: {name: null},
+      controller: 'HouseholdController'
+    })
+    .state('error', {
+      templateUrl: 'partials/error.html',
     })
 });

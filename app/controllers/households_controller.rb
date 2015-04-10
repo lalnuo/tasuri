@@ -1,20 +1,21 @@
 class HouseholdsController < ApplicationController
+  before_filter :init_session
   def can_access_household?(id)
-    puts session[:household_permissions]
     !session[:household_permissions].nil? && session[:household_permissions].include?(id)
   end
 
   def show
-    if can_access_household?(params[:id])
-      render :json => Household.friendly.find(params[:id])
+    household = Household.friendly.find_by_slug(params[:id])
+    if household.nil?
+      render :nothing => true, :status => 404
+    elsif can_access_household?(params[:id])
+      render :json => household
     else
       render :nothing => true, :status => 403
     end
   end
 
   def authenticate
-    puts session[:household_permissions]
-    session[:household_permissions] = [] if !session[:household_permissions]
     household = Household.friendly.find(params[:name])
     if household && household.authenticate(params[:password])
       session[:household_permissions] << household.name if !session[:household_permissions].include? household.name
@@ -29,11 +30,13 @@ class HouseholdsController < ApplicationController
   end
 
   def create
-    render :json => Household.create(household_params)
+    household = Household.create(household_params)
+    session[:household_permissions] << household.name
+    render :json => household
   end
 
 
   def household_params
-    params.require(:household).permit(:name)
+    params.permit(:name, :password)
   end
 end
