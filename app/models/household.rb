@@ -7,17 +7,13 @@ class Household < ActiveRecord::Base
 
   has_secure_password
 
-  def highest_balance
+  #TODO: don't update this every time user checks for balance
+  def most_money_spent
     user = self.users.max_by { |user| user.money_spent }
     user ? user.money_spent : 0
   end
 
-  def balances
-    highest = highest_balance
-    self.users.map { |user| {name: user.name, userBalance: user.money_spent - highest } }
-  end
-
   def to_json(options)
-    super(:only => :name, :methods => [:highest_balance, :balances], :include => [:users])
+    super(:only => [:name, :id], :include => {:users => {:methods => :balance}})
   end
 end

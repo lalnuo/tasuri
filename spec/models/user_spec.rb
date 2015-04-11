@@ -2,8 +2,8 @@ require 'rails_helper'
 
 RSpec.describe User, :type => :model do
 
-  before(:all) do
-    @household = Household.create(:name => "Bacon")
+  before(:each) do
+    @household = Household.create(:id => 1, :name => "Bacon")
     @user = User.create(:name => "Turtle", :household_id => @household.id)
   end
   
@@ -12,5 +12,4 @@ RSpec.describe User, :type => :model do
     purchase = Purchase.create(:price => 2.5, :user_id => @user.id, :household_id => @household.id)
     @user.money_spent.should  == 4.9
   end
-  
 end

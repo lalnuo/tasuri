@@ -1,12 +1,18 @@
 <h2>{{name}}</h2>
 
-<div ng-repeat="userBalance in userBalances">
-{{userBalance.name}} {{userBalance.userBalance}}
+<div ng-repeat="user in users">
+{{user.name}} {{user.balance}}
 </div>
 
-  <form novalidate class="simple-form">
-    Username: <select ng-model="purchase.user" ng-options="user as user.name for user in users"> </select> <br/>
-    Purchase: <input type="text" ng-model="purchase.name" /><br/>
-    Price: <input type="number" ng-model="purchase.price" />
-    <input type="submit" value="submit" >
-  </form>
+<h3>Add user</h3>
+<form ng-submit="addUser()">
+Username: <input type="text" ng-model="username"> <input type="submit"/>
+</form>
+
+<h3>Add purchase</h3>
+<form novalidate class="simple-form">
+  Username: <select ng-model="purchase.user" ng-options="user as user.name for user in users"> </select> <br/>
+  Purchase: <input type="text" ng-model="purchase.name" /><br/>
+  Price: <input type="number" ng-model="purchase.price" />
+  <input type="submit" value="submit" >
+</form>

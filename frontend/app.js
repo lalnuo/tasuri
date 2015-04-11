@@ -3,20 +3,24 @@ var tasuriApp = angular.module('tasuriApp', ['ui.router', 'ngCookies']).config([
 }]);
 var server = 'http://localhost:3000';
 
-tasuriApp.controller('HouseholdController', function($scope, $stateParams, $state, householdService, $http, household) {
-  if (!$stateParams.name) {
-    $state.go('error')
-    return;
-  }
+tasuriApp.controller('HouseholdController', function($scope, $stateParams, $state, householdService, userService, $http, household) {
+  console.log(household)
   $scope.create = function() {
     var promise = householdService.createHousehold($stateParams.name, $scope.password)
     promise.then(function(data) {
-
       $state.go('household', {name: $stateParams.name})
     });
   }
 
-  var currentState = $state.current.name
+  $scope.addUser = function() {
+    var promise = userService.createUser(household.data.id, $scope.username);
+    promise.then(function(data) {
+      $scope.users.push(data);
+    })
+  }
+
+  var currentState = $state.current.name // TODO: give view name in parameters instead, solve in resolve.
+
   if (currentState === 'household') {
       if (household.status === householdService.SHOW_HOUSEHOLD) {
         $scope.name = household.data.name;
@@ -46,15 +50,24 @@ tasuriApp.controller('AuthenticationController', function($scope, $stateParams, 
 });
 
 tasuriApp.service('authenticationService', function($http, $q) {
-  var deferred = $q.defer();
   this.auth = function(name, password) {
+  var deferred = $q.defer();
     $http.post(server + '/authenticate', {name: name, password: password}).success(function(data) {
       deferred.resolve(data);
     });
     return deferred.promise;
   }
+});
 
-})
+tasuriApp.service('userService', function($http, $q) {
+  this.createUser = function(householdId, username) {
+    var deferred = $q.defer();
+    $http.post(server + /users/, {household_id: householdId, name:  username}).success(function(data) {
+      deferred.resolve(data);
+    });
+    return deferred.promise;
+  }
+});
 
 tasuriApp.service('householdService', function($http, $q) {
 
@@ -75,8 +88,7 @@ tasuriApp.service('householdService', function($http, $q) {
       } else {
         deferred.resolve({status: self.NEW_HOUSEHOLD})
       }
-    })
-
+    });
     return deferred.promise;
   }
 

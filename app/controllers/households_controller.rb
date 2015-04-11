@@ -1,8 +1,5 @@
 class HouseholdsController < ApplicationController
   before_filter :init_session
-  def can_access_household?(id)
-    !session[:household_permissions].nil? && session[:household_permissions].include?(id)
-  end
 
   def show
     household = Household.friendly.find_by_slug(params[:id])
